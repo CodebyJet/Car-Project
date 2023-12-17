@@ -6,11 +6,12 @@
   </head>
   <body>
     <h1>World Editor</h1>
-    <canvas id="myCanvas"></canvas>
+    <canvas id="myCanvas"></canvas> <!-- A canvas is an element that allows JS to draw dynamically-->>
 
     <div id="controls">
     </div>
 
+    <script src="js/graphEditor.js"></script>
     <script src="js/math/graph.js"></script>
     <script src="js/primitives/point.js"></script>
     <script src="js/primitives/segment.js"></script>
@@ -18,7 +19,7 @@
       myCanvas.width = 600;
       myCanvas.height = 600;
 
-      const ctx = myCanvas.getContext("2d");
+      const ctx = myCanvas.getContext("2d"); //specifying that we are doing a 2d context
 
       const p1 = new Point(200, 200);
       const p2 = new Point(500, 200);
@@ -31,7 +32,14 @@
       const s4 = new Segment(p2, p3);
 
       const graph = new Graph([p1, p2, p3, p4], [s1, s2, s3, s4]);
-      graph.draw(ctx);
+      const graphEditor = new GraphEditor(myCanvas, graph);
+
+      animate(); 
+      function animate(){ // will continue to call itself, reloading the graph
+        ctx.clearRect(0, 0, myCanvas.width, myCanvas.height);
+        graphEditor.display();
+        requestAnimationFrame(animate);
+      }
     </script>
   </body>
 </html>
