@@ -1,10 +1,23 @@
-class Graph { //
+class Graph {
+  //
   constructor(points = [], segments = []) {
     this.points = points;
     this.segments = segments;
   }
   addPoint(point) {
     this.points.push(point);
+  }
+
+  static load(info) {
+    const points = info.points.map((i) => new Point(i.x, i.y));
+    const segments = info.segments.map(
+      (i) =>
+        new Segment(
+          points.find((p) => p.equals(i.p1)),
+          points.find((p) => p.equals(i.p2))
+        )
+    );
+    return new Graph(points, segments);
   }
 
   containsPoint(point) {
