@@ -20,6 +20,7 @@
     <script src="js/math/utils.js"></script>
     <script src="js/primitives/point.js"></script>
     <script src="js/primitives/segment.js"></script>
+    <script src="js/primitives/polygon.js"></script>
     <script>
       myCanvas.width = 600;
       myCanvas.height = 600;
@@ -38,6 +39,7 @@
       function animate() {
         viewport.reset();
         graphEditor.display();
+        new Polygon(graph.points).draw(ctx);
         requestAnimationFrame(animate);
       }
 
