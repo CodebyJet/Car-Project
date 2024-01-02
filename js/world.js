@@ -43,7 +43,18 @@ class World {
         )
       );
     }
-    return tmpEnvelopes;
+
+    const guides = Polygon.union(tmpEnvelopes.map((e) => e.poly))
+
+    for (let i = 0; i < guides.length; i++){
+      const seg = guides[i]
+      if (seg.length() < this.buidlingMinLength){
+        guides.splice(i, 1)
+        i --;
+      }
+    }
+
+    return guides;
   }
 
   draw(ctx) {
@@ -55,6 +66,9 @@ class World {
     }
     for (const seg of this.roadBorders) {
       seg.draw(ctx, { color: "white", width: 4 });
+    }
+    for (const bld of this.buildings){
+      bld.draw(ctx);
     }
   }
 }
