@@ -44,6 +44,11 @@ class World {
     const right = Math.max(...points.map((p) => p.x));
     const top = Math.min(...points.map((p) => p.y));
     const bottom = Math.max(...points.map((p) => p.y));
+
+    const illegalPolys = [
+      ...this.buildings,
+      ...this.envelopes.map((e) => e.poly)
+    ]
   
     const trees = [];
     while (trees.length < count) {
@@ -51,7 +56,16 @@ class World {
         lerp(left, right, Math.random()),
         lerp(bottom, top, Math.random())
       );
-      trees.push(p);
+      let keep = true;
+      for (const poly of illegalPolys){
+        if (poly.containsPoint(p)){
+          keep = false;
+          break;
+        }
+      }
+      if (keep){
+        trees.push(p);
+      }
     }
   
     return trees;
