@@ -20,6 +20,10 @@ class Graph {
     return new Graph(points, segments);
   }
 
+  hash() {
+    return JSON.stringify(this);
+  }
+
   containsPoint(point) {
     return this.points.find((p) => p.equals(point));
   }
