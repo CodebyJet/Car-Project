@@ -5,7 +5,8 @@ class World {
     roadRoundness = 10,
     buildingWidth = 150,
     buidlingMinLength = 150,
-    spacing = 50
+    spacing = 50,
+    treeSize = 160
   ) {
     this.graph = graph;
     this.roadWidth = roadWidth;
@@ -13,6 +14,7 @@ class World {
     this.buildingWidth = buildingWidth;
     this.buidlingMinLength = buidlingMinLength;
     this.spacing = spacing;
+    this.treeSize = treeSize;
 
     this.envelopes = [];
     this.roadBorders = [];
@@ -34,12 +36,12 @@ class World {
     this.trees = this.#generateTrees();
   }
 
-  #generateTrees(count = 10) {
+  #generateTrees() {
     const roadBorderPoints = this.roadBorders.map((s) => [s.p1, s.p2]).flat();
     const buildingPoints = this.buildings.flatMap((b) => b.points);
-  
+
     const points = [...new Set([...roadBorderPoints, ...buildingPoints])];
-  
+
     const left = Math.min(...points.map((p) => p.x));
     const right = Math.max(...points.map((p) => p.x));
     const top = Math.min(...points.map((p) => p.y));
@@ -47,30 +49,58 @@ class World {
 
     const illegalPolys = [
       ...this.buildings,
-      ...this.envelopes.map((e) => e.poly)
-    ]
-  
+      ...this.envelopes.map((e) => e.poly),
+    ];
+
     const trees = [];
-    while (trees.length < count) {
+    let tryCount = 0;
+    while (tryCount < 100) {
       const p = new Point(
         lerp(left, right, Math.random()),
         lerp(bottom, top, Math.random())
       );
+
+      // Checks trees are inside something they shouldn't be
       let keep = true;
-      for (const poly of illegalPolys){
-        if (poly.containsPoint(p)){
+      for (const poly of illegalPolys) {
+        if (poly.containsPoint(p) || poly.distanceToPoint(p) < this.treeSize / 2) {
           keep = false;
           break;
         }
       }
-      if (keep){
-        trees.push(p);
+
+      // No overlapping trees
+      if (keep) {
+        for (const tree of trees) {
+          if (distance(tree, p) < this.treeSize) {
+            keep = false;
+            break;
+          }
+        }
       }
+
+      // checks if they are too far away from something to be relivant
+      if (keep){
+        let closeToSomething = false;
+        for (const poly of illegalPolys){
+          if (poly.distanceToPoint(p) < this.treeSize * 2){
+            closeToSomething = true;
+            break;
+          }
+        }
+        keep = closeToSomething;
+      }
+
+      if (keep) {
+        trees.push(p);
+        tryCount = 0;
+      }
+      tryCount++;
     }
-  
+
     return trees;
   }
-  
+
   #generateBuildings() {
     const tmpEnvelopes = [];
     for (const seg of this.graph.segments) {
@@ -143,7 +173,7 @@ class World {
     }
 
     for (const tree of this.trees) {
-      tree.draw(ctx);
+      tree.draw(ctx, { size: this.treeSize, color: "rgba(0,0,0,0.5)" });
     }
     for (const bld of this.buildings) {
       bld.draw(ctx);
