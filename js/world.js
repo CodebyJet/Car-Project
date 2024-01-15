@@ -38,7 +38,7 @@ class World {
 
   #generateTrees() {
     const roadBorderPoints = this.roadBorders.map((s) => [s.p1, s.p2]).flat();
-    const buildingPoints = this.buildings.flatMap((b) => b.points);
+    const buildingPoints = this.buildings.flatMap((b) => b.base.points);
 
     const points = [...new Set([...roadBorderPoints, ...buildingPoints])];
 
@@ -48,7 +48,7 @@ class World {
     const bottom = Math.max(...points.map((p) => p.y));
 
     const illegalPolys = [
-      ...this.buildings,
+      ...this.buildings.map((b) => b.base),
       ...this.envelopes.map((e) => e.poly),
     ];
 
@@ -63,7 +63,10 @@ class World {
       // Checks trees are inside something they shouldn't be
       let keep = true;
       for (const poly of illegalPolys) {
-        if (poly.containsPoint(p) || poly.distanceToPoint(p) < this.treeSize / 2) {
+        if (
+          poly.containsPoint(p) ||
+          poly.distanceToPoint(p) < this.treeSize / 2
+        ) {
           keep = false;
           break;
         }
@@ -80,10 +83,10 @@ class World {
       }
 
       // checks if they are too far away from something to be relivant
-      if (keep){
+      if (keep) {
         let closeToSomething = false;
-        for (const poly of illegalPolys){
-          if (poly.distanceToPoint(p) < this.treeSize * 2){
+        for (const poly of illegalPolys) {
+          if (poly.distanceToPoint(p) < this.treeSize * 2) {
             closeToSomething = true;
             break;
           }
@@ -152,15 +155,17 @@ class World {
     const eps = 0.001;
     for (let i = 0; i < bases.length - 1; i++) {
       for (let j = i + 1; j < bases.length; j++) {
-        if (bases[i].intersectsPoly(bases[j]) ||
-        bases[i].distanceToPoly(bases[j]) < this.spacing - eps) {
+        if (
+          bases[i].intersectsPoly(bases[j]) ||
+          bases[i].distanceToPoly(bases[j]) < this.spacing - eps
+        ) {
           bases.splice(j, 1);
           j--;
         }
       }
     }
 
-    return bases;
+    return bases.map((b) => new Building(b));
   }
 
   draw(ctx, viewPoint) {
@@ -174,11 +179,14 @@ class World {
       seg.draw(ctx, { color: "white", width: 4 });
     }
 
-    for (const tree of this.trees) {
-      tree.draw(ctx, viewPoint);
-    }
-    for (const bld of this.buildings) {
-      bld.draw(ctx);
+    const items = [...this.buildings, ...this.trees]; //sorting the buildings and trees
+    items.sort(
+      (a, b) =>
+      b.base.distanceToPoint(viewPoint) - 
+      a.base.distanceToPoint(viewPoint)
+    )
+    for (const item of items) {
+      item.draw(ctx, viewPoint);
     }
   }
 }
