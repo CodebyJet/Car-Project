@@ -1,11 +1,11 @@
 class Building {
-  constructor(poly, heightCoef = 0.4) {
+  constructor(poly, height = 200) {
     this.base = poly;
-    this.heightCoef = heightCoef;
+    this.height = height;
   }
   draw(ctx, viewPoint) {
     const topPoints = this.base.points.map((p) =>
-      add(p, scale(subtract(p, viewPoint), this.heightCoef))
+      getFake3dPoint(p, viewPoint, this.height * 0.6)
     );
     const ceiling = new Polygon(topPoints);
     const sides = [];
@@ -20,14 +20,53 @@ class Building {
       sides.push(poly);
     }
     sides.sort(
-        (a, b) => b.distanceToPoint(viewPoint) -
-        a.distanceToPoint(viewPoint)
-    ) //so the furtherest point is drawn first, so we don't have empty boxes
+      (a, b) => b.distanceToPoint(viewPoint) - a.distanceToPoint(viewPoint)
+    ); //so the furtherest point is drawn first, so we don't have empty boxes
 
-    this.base.draw(ctx, { fill: "white", stroke: "#AAA" });
-    for (const side of sides){
-        side.draw(ctx, { fill: "white", stroke: "#AAA" });
+    const baseMidPoints = [
+      average(this.base.points[0], this.base.points[1]),
+      average(this.base.points[2], this.base.points[3]),
+    ];
+
+    const topMidPoints = baseMidPoints.map((p) =>
+    getFake3dPoint(p, viewPoint, this.height)
+    );
+
+    const roofPolys = [
+      new Polygon([
+        ceiling.points[0],
+        ceiling.points[3],
+        topMidPoints[1],
+        topMidPoints[0],
+      ]),
+      new Polygon([
+        ceiling.points[2],
+        ceiling.points[1],
+        topMidPoints[0],
+        topMidPoints[1],
+      ]),
+    ];
+
+    roofPolys.sort(
+      (a, b) => b.distanceToPoint(viewPoint) - a.distanceToPoint(viewPoint)
+    );
+
+    this.base.draw(ctx, {
+      fill: "white",
+      stroke: "rgba(0,0,0,0.2)",
+      lineWidth: 20,
+    }); //base of buildings
+    for (const side of sides) {
+      side.draw(ctx, { fill: "white", stroke: "#AAA" });
+    } // side of building styling
+    ceiling.draw(ctx, { fill: "white", stroke: "white", lineWidth: 6 }); //ceiling styling
+    for (const poly of roofPolys) {
+      poly.draw(ctx, {
+        fill: "#D44",
+        stroke: "#C44",
+        lineWidth: 8,
+        join: "round",
+      }); //roof styling
     }
-    ceiling.draw(ctx, { fill: "white", stroke: "#AAA" });
   }
 }
