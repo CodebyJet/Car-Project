@@ -34,11 +34,17 @@
       <button id="startBtn" onClick="setMode('start')">🚗</button>
       <button id="targetBtn" onClick="setMode('target')">🎯</button>
 
-      <div id="osmPanel" style="display: none;">
-        <textarea name="osmDataContainer" id="osmDataContainer" cols="50" rows="10" placeholder="Paste OSM data here"></textarea>
+      <div id="osmPanel" style="display: none">
+        <textarea
+          name="osmDataContainer"
+          id="osmDataContainer"
+          cols="50"
+          rows="10"
+          placeholder="Paste OSM data here"
+        ></textarea>
         <div>
-          <button onclick="parseOsmData()" >✔️</button>
-          <button onclick="closeOsmPanel()" >❌</button>
+          <button onclick="parseOsmData()">✔️</button>
+          <button onclick="closeOsmPanel()">❌</button>
         </div>
       </div>
     </div>
@@ -70,6 +76,7 @@
 
     <script src="js/math/graph.js"></script>
     <script src="js/math/utils.js"></script>
+    <script src="js/math/osm.js"></script>
 
     <script src="js/primitives/point.js"></script>
     <script src="js/primitives/segment.js"></script>
@@ -161,8 +168,8 @@
       }
 
       function save() {
-        world.zoom = viewport.zoom
-        world.offset = viewport.offset
+        world.zoom = viewport.zoom;
+        world.offset = viewport.offset;
         const element = document.createElement("a");
         element.setAttribute(
           "href",
@@ -190,11 +197,22 @@
         }
       }
 
-      function openOsmPanel(){
+      function openOsmPanel() {
         osmPanel.style.display = "block";
       }
-      function closeOsmPanel(){
+      function closeOsmPanel() {
         osmPanel.style.display = "none";
+      }
+
+      function parseOsmData() {
+        if (osmDataContainer.value == "") {
+          alert("Paste data first");
+          return;
+        }
+        const res = Osm.parseRoads(JSON.parse(osmDataContainer.value));
+        graph.points = res.points;
+        graph.segments = res.segments;
+        closeOsmPanel();
       }
     </script>
   </body>
