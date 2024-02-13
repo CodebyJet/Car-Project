@@ -23,9 +23,32 @@ class World {
     this.laneGuides = [];
     this.markings = [];
 
+    this.cars = [];
+    this.bestCar = null;
+
     this.frameCount = 0;
 
     this.generate();
+  }
+
+  static load(info) {
+    const world = new World(new Graph());
+    world.graph = Graph.load(info.graph);
+    world.roadWidth = info.roadWidth;
+    world.roadRoundness = info.roadRoundness;
+    world.buildingWidth = info.buildingWidth;
+    world.buidlingMinLength = info.buidlingMinLength;
+    world.spacing = info.spacing;
+    world.treeSize = info.treeSize;
+    world.envelopes = info.envelopes.map((e) => Envelope.load(e));
+    world.roadBorders = info.roadBorders.map((b) => new Segment(b.p1, b.p2));
+    world.buildings = info.buildings.map((e) => Building.load(e));
+    world.trees = info.trees.map((t) => new Tree(t.center, info.treeSize));
+    world.laneGuides = info.laneGuides.map((g) => new Segment(g.p1, g.p2));
+    world.markings = info.markings.map((m) => Marking.load(m));
+    world.zoom = info.zoom;
+    world.offset = info.offset;
+    return world;
   }
 
   generate() {
@@ -185,22 +208,21 @@ class World {
     return bases.map((b) => new Building(b));
   }
 
-  #getIntersections(){
+  #getIntersections() {
     const subset = [];
-    for (const point of this.graph.points){
-      let degree = 0
-      for (const seg of this.graph.segments){
-        if (seg.includes(point)){
-          degree ++
+    for (const point of this.graph.points) {
+      let degree = 0;
+      for (const seg of this.graph.segments) {
+        if (seg.includes(point)) {
+          degree++;
         }
       }
-      if (degree > 2){
-        subset.push(point)
+      if (degree > 2) {
+        subset.push(point);
       }
     }
-    return subset
+    return subset;
   }
-
 
   #updateLights() {
     const lights = this.markings.filter((m) => m instanceof Light);
@@ -242,19 +264,31 @@ class World {
     this.frameCount++;
   }
 
-  draw(ctx, viewPoint) {
+  draw(ctx, viewPoint, showStartMarkings = true) {
     this.#updateLights();
     for (const env of this.envelopes) {
       env.draw(ctx, { fill: "#BBB", stroke: "#BBB", lineWidth: 15 });
     }
     for (const marking of this.markings) {
-      marking.draw(ctx);
+      if (!(marking instanceof Start) || showStartMarkings) {
+        marking.draw(ctx);
+      }
     }
     for (const seg of this.graph.segments) {
       seg.draw(ctx, { color: "white", width: 4, dash: [10, 10] });
     }
     for (const seg of this.roadBorders) {
       seg.draw(ctx, { color: "white", width: 4 });
+    }
+
+    ctx.globalAlpha = 0.2;
+    for (const car of this.cars) {
+      car.draw(ctx);
+    }
+
+    ctx.globalAlpha = 1;
+    if (this.bestCar) {
+      this.bestCar.draw(ctx, true);
     }
 
     const items = [...this.buildings, ...this.trees]; //sorting the buildings and trees

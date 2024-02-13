@@ -3,8 +3,8 @@
   <head>
     <title>World Editor</title>
     <link rel="stylesheet" href="styles.css" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8" />
   </head>
   <body>
     <h1>World Editor</h1>
@@ -14,6 +14,16 @@
     <div id="controls">
       <button onClick="dispose()">🗑️</button>
       <button onClick="save()">💾</button>
+      <label for="fileInput" class="file-input-label"
+        >📁
+        <input
+          type="file"
+          id="fileInput"
+          accept=".world"
+          onchange="load(event)"
+        />
+      </label>
+      <button onClick="openOsmPanel()">🗺️</button>
       &nbsp;
       <button id="graphBtn" onClick="setMode('graph')">🌐</button>
       <button id="stopBtn" onClick="setMode('stop')">🛑</button>
@@ -23,6 +33,14 @@
       <button id="lightBtn" onClick="setMode('light')">🚦</button>
       <button id="startBtn" onClick="setMode('start')">🚗</button>
       <button id="targetBtn" onClick="setMode('target')">🎯</button>
+
+      <div id="osmPanel" style="display: none;">
+        <textarea name="osmDataContainer" id="osmDataContainer" cols="50" rows="10" placeholder="Paste OSM data here"></textarea>
+        <div>
+          <button onclick="parseOsmData()" >✔️</button>
+          <button onclick="closeOsmPanel()" >❌</button>
+        </div>
+      </div>
     </div>
 
     <script src="js/world.js"></script>
@@ -52,7 +70,7 @@
 
     <script src="js/math/graph.js"></script>
     <script src="js/math/utils.js"></script>
-    
+
     <script src="js/primitives/point.js"></script>
     <script src="js/primitives/segment.js"></script>
     <script src="js/primitives/polygon.js"></script>
@@ -63,12 +81,12 @@
 
       const ctx = myCanvas.getContext("2d"); //specifying that we are doing a 2d context
 
-      const graphString = localStorage.getItem("graph");
-      const graphInfo = graphString ? JSON.parse(graphString) : null;
-      const graph = graphInfo ? Graph.load(graphInfo) : new Graph();
-      const world = new World(graph);
+      const worldString = localStorage.getItem("world");
+      const worldInfo = worldString ? JSON.parse(worldString) : null;
+      let world = worldInfo ? World.load(worldInfo) : new World(new Graph());
+      const graph = world.graph;
 
-      const viewport = new Viewport(myCanvas);
+      const viewport = new Viewport(myCanvas, world.zoom, world.offset);
 
       const tools = {
         graph: { button: graphBtn, editor: new GraphEditor(viewport, graph) },
@@ -123,8 +141,38 @@
         world.markings.length = 0;
       }
 
+      function load(event) {
+        const file = event.target.files[0];
+
+        if (!file) {
+          alert("No file selected.");
+          return;
+        }
+        const reader = new FileReader();
+        reader.readAsText(file);
+
+        reader.onload = (evt) => {
+          const fileContent = evt.target.result;
+          const jsonData = JSON.parse(fileContent);
+          world = World.load(jsonData);
+          localStorage.setItem("world", JSON.stringify(world));
+          location.reload();
+        };
+      }
+
       function save() {
-        localStorage.setItem("graph", JSON.stringify(graph));
+        world.zoom = viewport.zoom
+        world.offset = viewport.offset
+        const element = document.createElement("a");
+        element.setAttribute(
+          "href",
+          "data:application/json;charset=utf-8," +
+            encodeURIComponent(JSON.stringify(world))
+        );
+        const fileName = "name.world";
+        element.setAttribute("download", fileName);
+        element.click();
+        localStorage.setItem("world", JSON.stringify(world));
       }
 
       function setMode(mode) {
@@ -140,6 +188,13 @@
           tool.button.style.filter = "grayscale(100%)";
           tool.editor.disable();
         }
+      }
+
+      function openOsmPanel(){
+        osmPanel.style.display = "block";
+      }
+      function closeOsmPanel(){
+        osmPanel.style.display = "none";
       }
     </script>
   </body>
